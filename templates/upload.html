@@ -1,0 +1,45 @@
+<!-- templates/upload.html -->
+{% extends "base.html" %}
+{% block title %}Analyze Resume - AI-Based Resume Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">Analyze Your Resume</h2>
+        <p class="text-muted">Upload your resume and optionally paste a job description to get your ATS score.</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" id="analyzeForm">
+
+                        <div class="mb-3">
+                            <label for="resumeInput" class="form-label">Upload Resume (PDF or DOCX)</label>
+                            <input class="form-control" type="file" id="resumeInput" name="resume" accept=".pdf,.docx" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="jobDescription" class="form-label">Job Description (optional)</label>
+                            <textarea class="form-control" id="jobDescription" name="job_description" rows="6"
+                                placeholder="Paste the job description here..."></textarea>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">Analyze Resume</button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}

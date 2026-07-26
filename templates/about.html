@@ -1,0 +1,101 @@
+<!-- templates/about.html -->
+{% extends "base.html" %}
+{% block title %}About - AI-Based Resume Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">About This Project</h2>
+        <p class="text-muted">AI-Based Resume Analyzer &mdash; A B.Tech CSE (Data Science) Mini Project</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Project Overview</h5>
+                    <p class="card-text">
+                        A well-prepared resume plays a crucial role in securing employment opportunities.
+                        This project was built to make resume review fast, consistent, and useful by
+                        applying basic AI and NLP techniques.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Problem Statement</h5>
+                    <p class="card-text">
+                        Many students and job seekers find it difficult to identify missing information,
+                        organize their resumes effectively, and tailor them to specific job requirements.
+                        Manual resume review is time-consuming and often overlooks important details, and
+                        most resumes are first filtered by Applicant Tracking Systems (ATS) before a human
+                        ever sees them.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Solution</h5>
+                    <p class="card-text">
+                        This application automatically extracts and analyzes resume content. It examines
+                        key sections &mdash; contact information, education, skills, projects, experience,
+                        and certifications &mdash; identifies what is missing or weak, and compares the
+                        resume against a job description to highlight relevant and missing skills.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Technology Used</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Python &amp; Flask (backend)</li>
+                        <li class="list-group-item">HTML5, CSS3, JavaScript</li>
+                        <li class="list-group-item">Bootstrap 5 (UI)</li>
+                        <li class="list-group-item">PyMuPDF (PDF text extraction)</li>
+                        <li class="list-group-item">python-docx (DOCX text extraction)</li>
+                        <li class="list-group-item">scikit-learn (TF-IDF &amp; cosine similarity)</li>
+                        <li class="list-group-item">Regex-based extraction for resume sections</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Project Details</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Project Title</span><strong>AI-Based Resume Analyzer</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Developed By</span><strong>Falak Naaz</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>College</span><strong>BIT Durg</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Branch</span><strong>CSE (Data Science)</strong>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('upload') }}" class="btn btn-primary">Analyze Your Resume</a>
+    </div>
+
+</div>
+{% endblock %}

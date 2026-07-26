@@ -1,0 +1,252 @@
+<!-- templates/result.html -->
+{% extends "base.html" %}
+{% block title %}Analysis Result - AI-Based Resume Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Your Resume Dashboard</h2>
+            <p class="text-muted mb-0">{{ original_filename }} &middot; Analyzed on {{ analyzed_at }}</p>
+        </div>
+        <a href="{{ url_for('upload') }}" class="btn btn-outline-primary mt-2 mt-md-0">Analyze Another Resume</a>
+    </div>
+
+    <!-- SCORE SUMMARY -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">ATS Compatibility Score</h6>
+                    <h2 class="fw-bold">{{ final_score }} / 100</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Skills Detected</h6>
+                    <h2 class="fw-bold">{{ resume_data.skills|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Job Match Percentage</h6>
+                    {% if had_job_description %}
+                        <h2 class="fw-bold">{{ job_match_result.job_match_percentage }}%</h2>
+                    {% else %}
+                        <h2 class="fw-bold text-muted">N/A</h2>
+                        <small class="text-muted">No job description provided</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCORE EXPLANATION -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Why This Score?</h5>
+            <p class="card-text">{{ score_explanation }}</p>
+
+            {% for label, item in score_breakdown.items() %}
+            <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                    <span class="fw-semibold">{{ label }}</span>
+                    <span>{{ item.score }} / {{ item.max }}</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar" role="progressbar"
+                         style="width: {{ (item.score / item.max * 100) if item.max else 0 }}%"></div>
+                </div>
+                <small class="text-muted">{{ item.detail }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- RESUME SUMMARY -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Resume Summary</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Name</span><strong>{{ resume_data.name }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Email</span>
+                            <strong class="{{ 'text-danger' if not resume_data.email }}">
+                                {{ resume_data.email or "Not Found" }}
+                            </strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Phone</span>
+                            <strong class="{{ 'text-danger' if not resume_data.phone }}">
+                                {{ resume_data.phone or "Not Found" }}
+                            </strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>LinkedIn</span><strong>{{ resume_data.linkedin or "Not Found" }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>GitHub</span><strong>{{ resume_data.github or "Not Found" }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Word Count</span><strong>{{ resume_data.word_count }} words</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Languages</span>
+                            <strong>{{ resume_data.languages|join(', ') if resume_data.languages else "Not Found" }}</strong>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- MISSING INFORMATION -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Missing Information</h5>
+                    {% if not analysis.missing_sections and not analysis.missing_contact %}
+                        <div class="alert alert-success mb-0">
+                            All key sections and contact details were found!
+                        </div>
+                    {% else %}
+                        {% if analysis.missing_sections %}
+                        <p class="fw-semibold mb-2">Missing Sections</p>
+                        <p class="mb-3">
+                            {% for section in analysis.missing_sections %}
+                            <span class="badge bg-danger me-1">{{ section }}</span>
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                        {% if analysis.missing_contact %}
+                        <p class="fw-semibold mb-2">Missing Contact Details</p>
+                        <p class="mb-0">
+                            {% for field in analysis.missing_contact %}
+                            <span class="badge bg-danger me-1">{{ field }}</span>
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SKILLS -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Skills Found ({{ resume_data.skills|length }})</h5>
+                    {% if resume_data.skills %}
+                        <p class="mb-0">
+                            {% for skill in resume_data.skills %}
+                            <span class="badge bg-success me-1 mb-1">{{ skill }}</span>
+                            {% endfor %}
+                        </p>
+                    {% else %}
+                        <p class="text-muted mb-0">No recognizable skills were detected. Add a dedicated "Skills" section.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {% if had_job_description %}Missing Skills (vs Job Description){% else %}Missing Skills{% endif %}
+                    </h5>
+                    {% if had_job_description %}
+                        {% if job_match_result.missing_skills %}
+                        <p class="mb-0">
+                            {% for skill in job_match_result.missing_skills %}
+                            <span class="badge bg-danger me-1 mb-1">{{ skill }}</span>
+                            {% endfor %}
+                        </p>
+                        {% else %}
+                        <p class="text-muted mb-0">Great! Your resume covers every skill mentioned in the job description.</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-0">Paste a job description on the upload page to see exactly which required skills you're missing.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JOB DESCRIPTION MATCH DETAILS -->
+    {% if had_job_description %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Job Description Match Details</h5>
+            <div class="row text-center g-3 mb-3">
+                <div class="col-md-4">
+                    <h4 class="fw-bold">{{ job_match_result.job_match_percentage }}%</h4>
+                    <small class="text-muted">Overall Job Match</small>
+                </div>
+                <div class="col-md-4">
+                    <h4 class="fw-bold">{{ job_match_result.skill_match_percentage }}%</h4>
+                    <small class="text-muted">Skill Overlap</small>
+                </div>
+                <div class="col-md-4">
+                    <h4 class="fw-bold">{{ job_match_result.text_similarity }}%</h4>
+                    <small class="text-muted">Text Similarity</small>
+                </div>
+            </div>
+
+            <p class="fw-semibold mb-2">Keyword Comparison (Top Job Description Keywords)</p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Keyword</th>
+                            <th>Found in Resume?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in job_match_result.keyword_comparison %}
+                        <tr>
+                            <td>{{ item.keyword }}</td>
+                            <td>
+                                {% if item.present_in_resume %}
+                                <span class="badge bg-success">Present</span>
+                                {% else %}
+                                <span class="badge bg-danger">Missing</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SUGGESTIONS -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">Suggestions to Improve Your Resume</h5>
+            {% if analysis.suggestions %}
+            <ul class="list-group list-group-flush">
+                {% for suggestion in analysis.suggestions %}
+                <li class="list-group-item">{{ suggestion }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted mb-0">No major issues found. Great work!</p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
