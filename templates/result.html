@@ -2,69 +2,101 @@
 {% block title %}Analysis Result - AI-Based Resume Analyzer{% endblock %}
 
 {% block content %}
+<style>
+    /* Modern Dashboard Styling */
+    .metric-card {
+        border: none;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.1) !important;
+    }
+    .skill-chip {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-block;
+    }
+    .skill-chip:hover {
+        transform: scale(1.08);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+    .wireframe-box {
+        transition: background-color 0.2s ease;
+    }
+    .wireframe-box:hover {
+        background-color: #f8f9fa !important;
+    }
+</style>
+
 <div class="container py-5">
 
+    <!-- DASHBOARD HEADER -->
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold mb-0">Your Resume Dashboard</h2>
             <p class="text-muted mb-0">{{ original_filename }} &middot; Analyzed on {{ analyzed_at }}</p>
         </div>
-        <a href="{{ url_for('upload') }}" class="btn btn-outline-primary mt-2 mt-md-0">Analyze Another Resume</a>
+        <a href="{{ url_for('upload') }}" class="btn btn-outline-primary mt-2 mt-md-0 shadow-sm">
+            Analyze Another Resume
+        </a>
     </div>
 
-    <!-- SCORE SUMMARY -->
+    <!-- METRIC CARDS -->
     <div class="row g-4 mb-4">
         <div class="col-md-4">
-            <div class="card text-center shadow-sm h-100">
+            <div class="card text-center shadow-sm h-100 metric-card bg-white">
                 <div class="card-body">
-                    <h6 class="text-muted">ATS Compatibility Score</h6>
-                    <h2 class="fw-bold">{{ final_score }} / 100</h2>
-                    <div class="progress" style="height: 10px;">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ final_score }}%"></div>
+                    <h6 class="text-muted text-uppercase fw-bold small">ATS Score</h6>
+                    <h2 class="fw-bold text-primary display-6 my-2">{{ final_score }} <span class="fs-6 text-muted">/ 100</span></h2>
+                    <div class="progress" style="height: 10px; border-radius: 10px;">
+                        <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ final_score }}%"></div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-center shadow-sm h-100">
+            <div class="card text-center shadow-sm h-100 metric-card bg-white">
                 <div class="card-body">
-                    <h6 class="text-muted">Skills Detected</h6>
-                    <h2 class="fw-bold">{{ resume_data.skills|length }}</h2>
-                    <span class="badge bg-success">{{ resume_data.skills|length }} found</span>
+                    <h6 class="text-muted text-uppercase fw-bold small">Skills Detected</h6>
+                    <h2 class="fw-bold text-success display-6 my-2">{{ resume_data.skills|length }}</h2>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                        {{ resume_data.skills|length }} Found
+                    </span>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-center shadow-sm h-100">
+            <div class="card text-center shadow-sm h-100 metric-card bg-white">
                 <div class="card-body">
-                    <h6 class="text-muted">Job Match Percentage</h6>
+                    <h6 class="text-muted text-uppercase fw-bold small">Job Match Alignment</h6>
                     {% if had_job_description %}
-                        <h2 class="fw-bold">{{ job_match_result.job_match_percentage }}%</h2>
-                        <div class="progress" style="height: 10px;">
+                        <h2 class="fw-bold text-info display-6 my-2">{{ job_match_result.job_match_percentage }}%</h2>
+                        <div class="progress" style="height: 10px; border-radius: 10px;">
                             <div class="progress-bar bg-info" role="progressbar" style="width: {{ job_match_result.job_match_percentage }}%"></div>
                         </div>
                     {% else %}
-                        <h2 class="fw-bold text-muted">N/A</h2>
-                        <small class="text-muted">No job description provided</small>
+                        <h2 class="fw-bold text-muted display-6 my-2">N/A</h2>
+                        <small class="text-muted">No Job Description Provided</small>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- SCORE EXPLANATION -->
-    <div class="card shadow-sm mb-4">
+    <!-- SCORE BREAKDOWN -->
+    <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-            <h5 class="card-title">Why This Score?</h5>
-            <p class="card-text">{{ score_explanation }}</p>
+            <h5 class="card-title fw-bold mb-3">Why This Score?</h5>
+            <p class="card-text text-secondary mb-4">{{ score_explanation }}</p>
 
             {% for label, item in score_breakdown.items() %}
             <div class="mb-3">
-                <div class="d-flex justify-content-between">
-                    <span class="fw-semibold">{{ label }}</span>
-                    <span>{{ item.score }} / {{ item.max }}</span>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-semibold text-dark">{{ label }}</span>
+                    <span class="fw-bold text-primary">{{ item.score }} / {{ item.max }}</span>
                 </div>
-                <div class="progress" style="height: 8px;">
+                <div class="progress mb-1" style="height: 8px;">
                     <div class="progress-bar" role="progressbar"
                          style="width: {{ (item.score / item.max * 100) if item.max else 0 }}%"></div>
                 </div>
@@ -74,61 +106,36 @@
         </div>
     </div>
 
+    <!-- RESUME SUMMARY & MISSING SECTIONS -->
     <div class="row g-4 mb-4">
-        <!-- RESUME SUMMARY -->
         <div class="col-md-6">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Resume Summary</h5>
+                    <h5 class="card-title fw-bold mb-3">Resume Summary</h5>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Name</span><strong>{{ resume_data.name }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Email</span>
-                            <strong class="{{ 'text-danger' if not resume_data.email }}">
-                                {{ resume_data.email or "Not Found" }}
-                            </strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Phone</span>
-                            <strong class="{{ 'text-danger' if not resume_data.phone }}">
-                                {{ resume_data.phone or "Not Found" }}
-                            </strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>LinkedIn</span><strong>{{ resume_data.linkedin or "Not Found" }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>GitHub</span><strong>{{ resume_data.github or "Not Found" }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Word Count</span><strong>{{ resume_data.word_count }} words</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Languages</span>
-                            <strong>{{ resume_data.languages|join(', ') if resume_data.languages else "Not Found" }}</strong>
-                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center"><span>Name</span><strong>{{ resume_data.name }}</strong></li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center"><span>Email</span><strong class="{{ 'text-danger' if not resume_data.email }}">{{ resume_data.email or "Not Found" }}</strong></li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center"><span>Phone</span><strong class="{{ 'text-danger' if not resume_data.phone }}">{{ resume_data.phone or "Not Found" }}</strong></li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center"><span>LinkedIn</span><strong>{{ resume_data.linkedin or "Not Found" }}</strong></li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center"><span>GitHub</span><strong>{{ resume_data.github or "Not Found" }}</strong></li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center"><span>Word Count</span><strong>{{ resume_data.word_count }} words</strong></li>
                     </ul>
                 </div>
             </div>
         </div>
 
-        <!-- MISSING INFORMATION -->
         <div class="col-md-6">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Missing Information</h5>
+                    <h5 class="card-title fw-bold mb-3">Missing Information</h5>
                     {% if not analysis.missing_sections and not analysis.missing_contact %}
-                        <div class="alert alert-success mb-0">
-                            All key sections and contact details were found!
-                        </div>
+                        <div class="alert alert-success border-0 mb-0">All key sections and contact details were found!</div>
                     {% else %}
                         {% if analysis.missing_sections %}
                         <p class="fw-semibold mb-2">Missing Sections</p>
                         <p class="mb-3">
                             {% for section in analysis.missing_sections %}
-                            <span class="badge bg-danger me-1">{{ section }}</span>
+                            <span class="badge bg-danger me-1 p-2">{{ section }}</span>
                             {% endfor %}
                         </p>
                         {% endif %}
@@ -136,7 +143,7 @@
                         <p class="fw-semibold mb-2">Missing Contact Details</p>
                         <p class="mb-0">
                             {% for field in analysis.missing_contact %}
-                            <span class="badge bg-danger me-1">{{ field }}</span>
+                            <span class="badge bg-danger me-1 p-2">{{ field }}</span>
                             {% endfor %}
                         </p>
                         {% endif %}
@@ -146,165 +153,198 @@
         </div>
     </div>
 
-    <!-- SKILLS -->
+    <!-- SKILLS CHIPS (CLICKABLE TO FILTER TABLE) -->
     <div class="row g-4 mb-4">
         <div class="col-md-6">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Skills Found ({{ resume_data.skills|length }})</h5>
+                    <h5 class="card-title fw-bold">Skills Found ({{ resume_data.skills|length }})</h5>
+                    <small class="text-muted d-block mb-3">Click any skill chip to search in the comparison table below</small>
                     {% if resume_data.skills %}
-                        <p class="mb-0">
+                        <div class="d-flex flex-wrap gap-2">
                             {% for skill in resume_data.skills %}
-                            <span class="badge bg-success me-1 mb-1">{{ skill }}</span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle skill-chip px-3 py-2 rounded-pill" onclick="quickSearch('{{ skill }}')">
+                                {{ skill }}
+                            </span>
                             {% endfor %}
-                        </p>
+                        </div>
                     {% else %}
-                        <p class="text-muted mb-0">No recognizable skills were detected. Add a dedicated "Skills" section.</p>
+                        <p class="text-muted mb-0">No recognizable skills detected.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
 
         <div class="col-md-6">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h5 class="card-title">
-                        {% if had_job_description %}Missing Skills (vs Job Description){% else %}Missing Skills{% endif %}
-                    </h5>
+                    <h5 class="card-title fw-bold">Missing Skills</h5>
+                    <small class="text-muted d-block mb-3">Click any skill chip to search in the comparison table below</small>
                     {% if had_job_description %}
                         {% if job_match_result.missing_skills %}
-                        <p class="mb-0">
+                        <div class="d-flex flex-wrap gap-2">
                             {% for skill in job_match_result.missing_skills %}
-                            <span class="badge bg-danger me-1 mb-1">{{ skill }}</span>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle skill-chip px-3 py-2 rounded-pill" onclick="quickSearch('{{ skill }}')">
+                                {{ skill }}
+                            </span>
                             {% endfor %}
-                        </p>
+                        </div>
                         {% else %}
-                        <p class="text-muted mb-0">Great! Your resume covers every skill mentioned in the job description.</p>
+                        <p class="text-success mb-0">All required skills are covered in your resume!</p>
                         {% endif %}
                     {% else %}
-                        <p class="text-muted mb-0">Paste a job description on the upload page to see exactly which required skills you're missing.</p>
+                        <p class="text-muted mb-0">Paste a job description on the upload page to calculate missing skills.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- JOB DESCRIPTION MATCH DETAILS -->
+    <!-- KEYWORD TABLE WITH FILTER + SEARCH CONTROLS -->
     {% if had_job_description %}
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
-            <h5 class="card-title">Job Description Match Details</h5>
-            <div class="row text-center g-3 mb-4">
-                <div class="col-md-4">
-                    <h4 class="fw-bold">{{ job_match_result.job_match_percentage }}%</h4>
-                    <small class="text-muted">Overall Job Match</small>
-                </div>
-                <div class="col-md-4">
-                    <h4 class="fw-bold">{{ job_match_result.skill_match_percentage }}%</h4>
-                    <small class="text-muted">Skill Overlap</small>
-                </div>
-                <div class="col-md-4">
-                    <h4 class="fw-bold">{{ job_match_result.text_similarity }}%</h4>
-                    <small class="text-muted">Text Similarity</small>
-                </div>
-            </div>
-
-            <p class="fw-semibold mb-2">Keyword Comparison</p>
-
-            <!-- Search + Filter controls -->
+            <h5 class="card-title fw-bold mb-3">Job Description Requirement Matching</h5>
+            
             <div class="row g-2 mb-3">
                 <div class="col-md-6">
-                    <input type="text" class="form-control" id="keywordSearch" placeholder="Search a keyword...">
+                    <input type="text" class="form-control" id="keywordSearch" placeholder="Type keyword to filter live...">
                 </div>
                 <div class="col-md-6">
                     <div class="btn-group w-100" role="group">
-                        <button type="button" class="btn btn-outline-secondary active" data-filter="all" id="filterAll">All</button>
-                        <button type="button" class="btn btn-outline-success" data-filter="present" id="filterPresent">Present</button>
-                        <button type="button" class="btn btn-outline-danger" data-filter="missing" id="filterMissing">Missing</button>
+                        <button type="button" class="btn btn-outline-primary active" data-filter="all">All</button>
+                        <button type="button" class="btn btn-outline-success" data-filter="present">Present</button>
+                        <button type="button" class="btn btn-outline-danger" data-filter="missing">Missing</button>
                     </div>
                 </div>
             </div>
 
             <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="keywordTable">
-                    <thead>
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
                         <tr>
-                            <th>Keyword</th>
-                            <th>Found in Resume?</th>
+                            <th>Extracted Keyword / Technical Term</th>
+                            <th class="text-center" style="width: 200px;">Status in Resume</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="keywordTableBody">
                         {% for item in job_match_result.keyword_comparison %}
-                        <tr class="keyword-row"
-                            data-keyword="{{ item.keyword|lower }}"
-                            data-status="{{ 'present' if item.present_in_resume else 'missing' }}">
-                            <td>{{ item.keyword }}</td>
-                            <td>
+                        <tr class="keyword-row" data-keyword="{{ item.keyword|lower }}" data-status="{{ 'present' if item.present_in_resume else 'missing' }}">
+                            <td class="fw-semibold text-dark">{{ item.keyword }}</td>
+                            <td class="text-center">
                                 {% if item.present_in_resume %}
-                                <span class="badge bg-success">Present</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">Present</span>
                                 {% else %}
-                                <span class="badge bg-danger">Missing</span>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Missing</span>
                                 {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-                <p class="text-muted small d-none" id="noKeywordResults">No matching keywords found.</p>
+                <p class="text-muted text-center d-none py-3" id="noKeywordResults">No matching keywords found.</p>
             </div>
         </div>
     </div>
     {% endif %}
 
-    <!-- SUGGESTIONS + ATS TIPS ACCORDION -->
-    <div class="accordion mb-4" id="resultAccordion">
+    <!-- RECOMMENDED RESUME TEMPLATE SECTION (RESTORED WIREFRAME) -->
+    {% if template_recommendation %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title fw-bold mb-0">Recommended Resume Template</h5>
+                <span class="badge bg-primary px-3 py-2 rounded-pill">
+                    {{ template_recommendation.role_category or "Tech Role" }}
+                </span>
+            </div>
 
-        <div class="accordion-item">
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-dark">Layout Recommendation</h6>
+                    <p class="mb-1"><strong>Template Name:</strong> {{ template_recommendation.recommended_template or "Modern Tech Template" }}</p>
+                    <p class="mb-1"><strong>Layout Style:</strong> {{ template_recommendation.layout_style or "Single-column" }}</p>
+                    <small class="text-muted">Single-column layouts perform best with ATS software.</small>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-dark">Formatting Specifications</h6>
+                    <p class="mb-1"><strong>Font:</strong> {{ template_recommendation.formatting_specs.font or "Calibri / Arial" }}</p>
+                    <p class="mb-1"><strong>Font Size:</strong> {{ template_recommendation.formatting_specs.font_size or "10-12 pt" }}</p>
+                    <p class="mb-0"><strong>Line Spacing:</strong> {{ template_recommendation.formatting_specs.line_spacing or "1.15" }}</p>
+                </div>
+            </div>
+
+            <!-- VISUAL RESUME WIREFRAME -->
+            <div class="bg-light p-4 rounded border text-center">
+                <h6 class="fw-bold text-muted mb-3">Visual Resume Wireframe Preview</h6>
+                <div class="d-flex flex-column align-items-center gap-2">
+                    <div class="bg-white border rounded px-4 py-2 fw-bold w-50 shadow-sm wireframe-box">Header (Name & Contact Details)</div>
+                    <div class="text-muted fw-bold">↓</div>
+                    <div class="bg-white border rounded px-4 py-2 fw-semibold w-50 shadow-sm wireframe-box">Summary / Objective</div>
+                    <div class="text-muted fw-bold">↓</div>
+                    <div class="bg-white border rounded px-4 py-2 fw-semibold w-50 shadow-sm wireframe-box">Skills & Technologies</div>
+                    <div class="text-muted fw-bold">↓</div>
+                    <div class="bg-white border rounded px-4 py-2 fw-semibold w-50 shadow-sm wireframe-box">Projects</div>
+                    <div class="text-muted fw-bold">↓</div>
+                    <div class="bg-white border rounded px-4 py-2 fw-semibold w-50 shadow-sm wireframe-box">Experience</div>
+                    <div class="text-muted fw-bold">↓</div>
+                    <div class="bg-white border rounded px-4 py-2 fw-semibold w-50 shadow-sm wireframe-box">Education</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ACCORDION FOR SUGGESTIONS & ATS TIPS -->
+    <div class="accordion shadow-sm border-0" id="resultAccordion">
+        <div class="accordion-item border-0 mb-2 rounded overflow-hidden">
             <h2 class="accordion-header" id="headingSuggestions">
-                <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#collapseSuggestions" aria-expanded="true" aria-controls="collapseSuggestions">
+                <button class="accordion-button fw-bold bg-white text-dark shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSuggestions">
                     Suggestions to Improve Your Resume
                 </button>
             </h2>
             <div id="collapseSuggestions" class="accordion-collapse collapse show" data-bs-parent="#resultAccordion">
-                <div class="accordion-body">
+                <div class="accordion-body bg-white border-top">
                     {% if analysis.suggestions %}
                     <ul class="list-group list-group-flush">
                         {% for suggestion in analysis.suggestions %}
-                        <li class="list-group-item">{{ suggestion }}</li>
+                        <li class="list-group-item border-0 px-0 d-flex align-items-center">
+                            <span class="text-primary me-2">→</span> {{ suggestion }}
+                        </li>
                         {% endfor %}
                     </ul>
                     {% else %}
-                    <p class="text-muted mb-0">No major issues found. Great work!</p>
+                    <p class="text-muted mb-0">No major issues found!</p>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        {% if template_recommendation is defined and template_recommendation %}
-        <div class="accordion-item">
+        {% if template_recommendation %}
+        <div class="accordion-item border-0 rounded overflow-hidden">
             <h2 class="accordion-header" id="headingTips">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#collapseTips" aria-expanded="false" aria-controls="collapseTips">
+                <button class="accordion-button collapsed fw-bold bg-white text-dark shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTips">
                     Quick ATS Tips
                 </button>
             </h2>
             <div id="collapseTips" class="accordion-collapse collapse" data-bs-parent="#resultAccordion">
-                <div class="accordion-body">
+                <div class="accordion-body bg-white border-top">
                     <ul class="list-group list-group-flush">
                         {% for tip in template_recommendation.ats_tips %}
-                        <li class="list-group-item">{{ tip }}</li>
+                        <li class="list-group-item border-0 px-0 d-flex align-items-center">
+                            <span class="text-success me-2">✓</span> {{ tip }}
+                        </li>
                         {% endfor %}
                     </ul>
                 </div>
             </div>
         </div>
         {% endif %}
-
     </div>
 
 </div>
 
+<!-- INTERACTIVE SCRIPT -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     var searchInput = document.getElementById("keywordSearch");
@@ -342,6 +382,14 @@ document.addEventListener("DOMContentLoaded", function () {
             applyFilters();
         });
     });
+
+    window.quickSearch = function(term) {
+        if (searchInput) {
+            searchInput.value = term;
+            applyFilters();
+            searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
 });
 </script>
 {% endblock %}
