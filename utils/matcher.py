@@ -13,8 +13,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from utils.extractor import extract_skills
 
-# A generic stopword list (kept local to avoid needing NLTK downloads)
-STOPWORDS = set("""
+# ------------------------------------------------------------------
+# STOP_WORDS: generic English words + filler business/HR terms that
+# should NEVER show up in the keyword comparison table. This fixes
+# the bug where words like "good", "strong", "team", "pvt", "ltd"
+# were being treated as if they were real skills/keywords.
+# ------------------------------------------------------------------
+STOP_WORDS = set("""
 a an the and or but if while with without within to of in on for from by
 as is are was were be been being this that these those it its it's you
 your we our they their he she his her i me my mine ours yours theirs
@@ -22,19 +27,35 @@ will would can could should shall must may might not no nor do does did
 have has had having at into over under again further then once here there
 all any both each few more most other some such only own same so than too
 very s t just don now etc using use used via per e.g eg i.e ie
+
+pvt ltd inc llc llp co company corp corporation organization organisation
+required requirement requirements desirable preferred responsibilities
+responsibility role roles job position candidate candidates applicant
+apply application looking seeking join joining opportunity opportunities
+good strong excellent great solid proven demonstrated ability abilities
+skill skills knowledge experience experienced years year fresher freshers
+team teams member members individual environment work working works
+about please note kindly regard regards ctc salary package benefits
+location remote onsite hybrid full time part fulltime parttime internship
+day days month months week weeks etc minimum maximum plus preferred
 """.split())
 
 
 def extract_keywords(text, top_n=40):
     """
-    Extract the most relevant keywords from a job description using simple
-    frequency analysis (excluding stopwords and short tokens).
+    Extract candidate keywords from a job description using simple
+    frequency analysis, excluding stopwords, filler terms, short tokens,
+    and pure numbers (e.g. years, salary figures, phone numbers).
     """
     words = re.findall(r"[a-zA-Z][a-zA-Z0-9+#./-]{1,}", text.lower())
     freq = {}
     for w in words:
         w = w.strip(".,-/")
-        if len(w) < 3 or w in STOPWORDS:
+        if len(w) < 3:
+            continue
+        if w in STOP_WORDS:
+            continue
+        if w.isdigit():
             continue
         freq[w] = freq.get(w, 0) + 1
 
@@ -79,23 +100,52 @@ def compute_text_similarity(resume_text, jd_text):
         similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
         return round(float(similarity) * 100, 1)
     except ValueError:
-        # Happens if texts are empty after stopword removal
         return 0.0
 
 
 def compute_keyword_comparison(resume_text, jd_text):
     """
-    Build a keyword-level comparison table: top JD keywords and whether
-    each appears in the resume text.
+    Build the keyword-level comparison table shown in the UI.
+
+    FIX: instead of comparing every raw word in the job description
+    (which let junk words like "good", "team", "pvt", "ltd" leak in),
+    this now:
+      1. Uses the curated skills database (extract_skills) as the
+         primary source, guaranteeing every row is an actual skill,
+         tool, or framework (e.g. Python, React, SQL, Git,
+         Data Structures).
+      2. Optionally supplements with a few extra frequency-based
+         keywords from the JD, but only after filtering them through
+         STOP_WORDS, a minimum length, and excluding pure numbers —
+         and never duplicating a skill already listed.
     """
-    jd_keywords = extract_keywords(jd_text, top_n=25)
     resume_text_lower = resume_text.lower()
 
+    # 1. Primary: real, curated skills/tools/frameworks found in the JD
+    jd_skills = extract_skills(jd_text)
+
     comparison = []
-    for kw in jd_keywords:
+    seen = set()
+    for skill in jd_skills:
+        pattern = r"\b" + re.escape(skill) + r"\b"
+        present = bool(re.search(pattern, resume_text_lower))
+        comparison.append({"keyword": skill, "present_in_resume": present})
+        seen.add(skill)
+
+    # 2. Secondary: a handful of additional meaningful keywords not
+    #    already covered by the skills database, still stopword-filtered
+    extra_keywords = extract_keywords(jd_text, top_n=15)
+    extra_added = 0
+    for kw in extra_keywords:
+        if kw in seen:
+            continue
+        if extra_added >= 8:  # keep the table focused, not noisy
+            break
         pattern = r"\b" + re.escape(kw) + r"\b"
         present = bool(re.search(pattern, resume_text_lower))
         comparison.append({"keyword": kw, "present_in_resume": present})
+        seen.add(kw)
+        extra_added += 1
 
     return comparison
 
@@ -113,8 +163,6 @@ def match_resume_to_job(resume_data, jd_text):
     text_similarity = compute_text_similarity(resume_text, jd_text)
     keyword_comparison = compute_keyword_comparison(resume_text, jd_text)
 
-    # Combined job match percentage: weighted average of skill overlap
-    # (70%) and overall text similarity (30%)
     job_match_percentage = round(
         skill_match["skill_match_percentage"] * 0.7 + text_similarity * 0.3, 1
     )
@@ -143,7 +191,6 @@ def compute_final_ats_score(base_score, base_breakdown, job_match_result=None):
             "job-specific ATS score."
         )
 
-    # When a JD is provided: final score = 60% base quality + 40% job match
     job_match_pct = job_match_result["job_match_percentage"]
     final_score = round(base_score * 0.6 + job_match_pct * 0.4, 1)
     final_score = min(final_score, 100.0)
@@ -156,7 +203,6 @@ def compute_final_ats_score(base_score, base_breakdown, job_match_result=None):
                   f"({len(job_match_result['matching_skills'])} matching skill(s), "
                   f"{len(job_match_result['missing_skills'])} missing skill(s)).",
     }
-    # Rescale the base categories to fit within 60 total when a JD is present
     for key in ["Section Completeness", "Contact Information",
                 "Skill Richness", "Formatting & Content Quality"]:
         if key in breakdown:
