@@ -8,7 +8,7 @@ Analyzes the parsed resume data to:
 """
 
 import re
-from utils.skills_db import ACTION_VERBS
+from utils.skills_db import ACTION_VERBS, TECHNICAL_SKILLS
 
 REQUIRED_SECTIONS = ["education", "skills", "projects", "experience", "certifications"]
 
@@ -243,4 +243,117 @@ def analyze_resume(parsed_data):
         "suggestions": suggestions,
         "base_ats_score": base_score,
         "score_breakdown": breakdown,
+    }
+# ============================================================
+# JOB-SPECIFIC TEMPLATE & WIREFRAME RECOMMENDATION
+# (Additive feature — does not modify any existing function)
+# ============================================================
+
+DESIGN_KEYWORDS = [
+    "figma", "photoshop", "illustrator", "canva", "adobe", "sketch",
+    "ui", "ux", "user interface", "user experience", "graphic design",
+    "portfolio", "branding", "typography", "wireframe", "prototyping",
+    "visual design", "product design",
+]
+
+MANAGEMENT_KEYWORDS = [
+    "management", "manager", "leadership", "stakeholder", "budget",
+    "operations", "strategy", "business analysis", "project management",
+    "product management", "scrum master", "mba", "team lead", "kpi",
+    "roadmap", "cross-functional", "p&l",
+]
+
+ATS_TIPS = [
+    "Use standard section headings like 'Experience' and 'Education' instead of creative titles.",
+    "Save and upload your resume as a text-based PDF, never a scanned image.",
+    "Avoid tables, text boxes, and multi-column layouts, which can confuse many ATS parsers.",
+    "Naturally mirror keywords from the job description in your bullet points.",
+    "Keep your contact info in the body of the page, not inside a header/footer or an image.",
+]
+
+FORMATTING_SPECS = {
+    "font_size": "11–12 pt for body text",
+    "heading_size": "14–16 pt, bold",
+    "line_spacing": "1.15",
+    "margins": "1 inch (2.54 cm) on all sides",
+    "bullet_style": "Simple round bullets (•) — avoid icons or images as bullets",
+}
+
+WIREFRAME_SECTIONS = [
+    "Header (Name & Contact Info)",
+    "Summary",
+    "Skills",
+    "Projects",
+    "Experience",
+    "Education",
+]
+
+
+def _detect_job_role(parsed_data, job_description=""):
+    """Very lightweight keyword-based role classifier: Tech / Design / Management / General."""
+    combined_text = (parsed_data.get("raw_text", "") + " " + (job_description or "")).lower()
+
+    tech_count = sum(1 for kw in TECHNICAL_SKILLS if kw in combined_text)
+    design_count = sum(1 for kw in DESIGN_KEYWORDS if kw in combined_text)
+    management_count = sum(1 for kw in MANAGEMENT_KEYWORDS if kw in combined_text)
+
+    scores = {"Tech": tech_count, "Design": design_count, "Management": management_count}
+    best_role = max(scores, key=scores.get)
+
+    if scores[best_role] == 0:
+        return "General"
+    return best_role
+
+
+def recommend_resume_template(parsed_data, job_description=""):
+    """
+    Detects the likely job role from the resume + job description, and returns
+    a simple template/layout/font/priority-section/ATS-tip recommendation.
+    Does not affect ATS scoring in any way — purely additive display data.
+    """
+    role = _detect_job_role(parsed_data, job_description)
+
+    role_configs = {
+        "Tech": {
+            "template_name": "Modern Tech Template",
+            "layout_style": "Single-column",
+            "layout_reason": "Single-column layouts parse more reliably through ATS scanners and keep the focus on skills and projects.",
+            "recommended_font": "Calibri",
+            "priority_sections": ["Projects", "Technical Skills", "GitHub / Portfolio Links", "Certifications"],
+        },
+        "Design": {
+            "template_name": "Creative Portfolio Template",
+            "layout_style": "Two-column (with a linked portfolio)",
+            "layout_reason": "A two-column layout allows a compact skills sidebar while keeping portfolio links and project visuals prominent.",
+            "recommended_font": "Georgia",
+            "priority_sections": ["Portfolio / Work Samples", "Design Tools & Software", "Projects", "Certifications"],
+        },
+        "Management": {
+            "template_name": "Executive Standard Template",
+            "layout_style": "Single-column",
+            "layout_reason": "A clear, single-column chronological layout is what recruiters and ATS systems expect for leadership-track roles.",
+            "recommended_font": "Georgia",
+            "priority_sections": ["Leadership Experience", "Achievements & Metrics", "Certifications", "Education"],
+        },
+        "General": {
+            "template_name": "ATS Standard Template",
+            "layout_style": "Single-column",
+            "layout_reason": "A single-column, no-frills layout is the safest default when the target role isn't clearly technical, creative, or managerial.",
+            "recommended_font": "Arial",
+            "priority_sections": ["Skills", "Experience", "Education", "Certifications"],
+        },
+    }
+
+    config = role_configs[role]
+
+    return {
+        "detected_role": role,
+        "template_name": config["template_name"],
+        "layout_style": config["layout_style"],
+        "layout_reason": config["layout_reason"],
+        "recommended_font": config["recommended_font"],
+        "formatting": FORMATTING_SPECS,
+        "priority_sections": config["priority_sections"],
+        "ats_tips": ATS_TIPS,
+        "wireframe_sections": WIREFRAME_SECTIONS,
     }

@@ -20,7 +20,7 @@ from werkzeug.utils import secure_filename
 
 from utils.parser import extract_text, allowed_file
 from utils.extractor import parse_resume
-from utils.analyzer import analyze_resume
+from utils.analyzer import analyze_resume, recommend_resume_template
 from utils.matcher import match_resume_to_job, compute_final_ats_score
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -95,6 +95,7 @@ def upload():
 
         resume_data = parse_resume(raw_text)
         analysis = analyze_resume(resume_data)
+        template_recommendation = recommend_resume_template(resume_data, job_description)
 
         job_match_result = None
         if job_description and len(job_description.split()) >= 5:
@@ -110,6 +111,7 @@ def upload():
             "analyzed_at": datetime.now().strftime("%d %b %Y, %I:%M %p"),
             "resume_data": resume_data,
             "analysis": analysis,
+            "template_recommendation": template_recommendation,
             "job_match_result": job_match_result,
             "final_score": final_score,
             "score_breakdown": score_breakdown,
