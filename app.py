@@ -1,11 +1,6 @@
 """
 app.py
 AI-Based Resume Analyzer - Main Flask Application
-
-Run with:
-    python app.py
-
-Then open http://127.0.0.1:5000 in your browser.
 """
 
 import os
@@ -35,31 +30,24 @@ app.secret_key = "resume-analyzer-secret-key-change-in-production"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# In-memory store for the most recent analysis result per session.
-# (Simple approach suitable for a college project / single-user demo.
-#  For production/multi-user use, replace with a database.)
 ANALYSIS_STORE = {}
 
 
 @app.route("/")
 def home():
-    """Landing / home page describing the application."""
     return render_template("index.html")
 
 
 @app.route("/about")
 def about():
-    """About page describing the project."""
     return render_template("about.html")
 
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
-    """Upload page: accepts a resume file and an optional job description."""
     if request.method == "GET":
         return render_template("upload.html")
 
-    # --- POST: handle file upload ---
     if "resume" not in request.files:
         flash("No file part in the request. Please choose a file.", "danger")
         return redirect(url_for("upload"))
@@ -74,7 +62,6 @@ def upload():
         flash("Invalid file type. Only PDF and DOCX files are supported.", "danger")
         return redirect(url_for("upload"))
 
-    # Save file with a unique name to avoid collisions
     original_name = secure_filename(file.filename)
     unique_name = f"{uuid.uuid4().hex}_{original_name}"
     file_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_name)
@@ -111,12 +98,12 @@ def upload():
             "analyzed_at": datetime.now().strftime("%d %b %Y, %I:%M %p"),
             "resume_data": resume_data,
             "analysis": analysis,
-            "template_recommendation": template_recommendation,
             "job_match_result": job_match_result,
             "final_score": final_score,
             "score_breakdown": score_breakdown,
             "score_explanation": score_explanation,
             "had_job_description": bool(job_match_result),
+            "template_recommendation": template_recommendation,
         }
         session["last_result_id"] = result_id
 
@@ -127,7 +114,6 @@ def upload():
         flash(f"An unexpected error occurred while analyzing your resume: {exc}", "danger")
         return redirect(url_for("upload"))
     finally:
-        # Clean up the uploaded file from disk after processing
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
@@ -139,11 +125,18 @@ def upload():
 
 @app.route("/result/<result_id>")
 def result(result_id):
-    """Analysis result / dashboard page."""
     data = ANALYSIS_STORE.get(result_id)
     if not data:
         flash("This analysis result was not found or has expired. Please upload again.", "warning")
         return redirect(url_for("upload"))
+
+    data.setdefault("template_recommendation", {
+        "role_category": None,
+        "recommended_template": None,
+        "layout_style": None,
+        "formatting_specs": {},
+        "ats_tips": [],
+    })
 
     return render_template("result.html", result_id=result_id, **data)
 

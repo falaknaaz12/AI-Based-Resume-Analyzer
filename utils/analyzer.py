@@ -249,18 +249,40 @@ def analyze_resume(parsed_data):
 # (Additive feature — does not modify any existing function)
 # ============================================================
 
-DESIGN_KEYWORDS = [
-    "figma", "photoshop", "illustrator", "canva", "adobe", "sketch",
-    "ui", "ux", "user interface", "user experience", "graphic design",
-    "portfolio", "branding", "typography", "wireframe", "prototyping",
-    "visual design", "product design",
+# ============================================================
+# JOB-SPECIFIC TEMPLATE RECOMMENDATION
+# (Additive feature -- does not modify any existing function)
+# ============================================================
+
+TECH_ROLE_KEYWORDS = [
+    "software engineer", "software developer", "web developer", "full stack",
+    "fullstack", "full-stack", "backend developer", "backend engineer",
+    "frontend developer", "frontend engineer", "front-end", "back-end",
+    "data scientist", "data science", "machine learning", "ml engineer",
+    "ai engineer", "artificial intelligence", "devops", "devops engineer",
+    "cloud engineer", "cloud computing", "cybersecurity", "cyber security",
+    "programmer", "sde", "application developer", "mobile developer",
+    "android developer", "ios developer",
 ]
 
-MANAGEMENT_KEYWORDS = [
-    "management", "manager", "leadership", "stakeholder", "budget",
-    "operations", "strategy", "business analysis", "project management",
-    "product management", "scrum master", "mba", "team lead", "kpi",
-    "roadmap", "cross-functional", "p&l",
+EXECUTIVE_KEYWORDS = [
+    "manager", "project manager", "product manager", "team lead", "tech lead",
+    "business manager", "operations manager", "general manager", "senior manager",
+    "director", "head of department", "head of", "chief executive",
+    "chief operating", "chief technology officer", "vice president",
+    "senior executive", "leadership role", "people management", "managing a team",
+]
+
+NON_TECHNICAL_KEYWORDS = [
+    "marketing", "digital marketing", "social media marketing", "content marketing",
+    "seo", "content writer", "content writing",
+    "human resources", "hr executive", "hr generalist", "hr recruiter",
+    "talent acquisition", "recruitment",
+    "sales executive", "sales representative", "business development", "sales associate",
+    "customer support", "customer service", "customer care", "support executive",
+    "finance", "accounting", "accountant", "bookkeeping", "financial analyst",
+    "administration", "administrative assistant", "office assistant", "data entry",
+    "fresher", "entry level", "entry-level", "trainee", "graduate trainee",
 ]
 
 ATS_TIPS = [
@@ -271,89 +293,100 @@ ATS_TIPS = [
     "Keep your contact info in the body of the page, not inside a header/footer or an image.",
 ]
 
-FORMATTING_SPECS = {
-    "font_size": "11–12 pt for body text",
-    "heading_size": "14–16 pt, bold",
-    "line_spacing": "1.15",
-    "margins": "1 inch (2.54 cm) on all sides",
-    "bullet_style": "Simple round bullets (•) — avoid icons or images as bullets",
+ROLE_TEMPLATE_CONFIG = {
+    "Tech": {
+        "template_name": "Modern Tech Template",
+        "role_category": "Technical Role",
+        "layout_style": "Single-column",
+        "font": "Calibri",
+        "font_size": "11 pt",
+        "line_spacing": "1.15",
+    },
+    "Executive": {
+        "template_name": "Executive Template",
+        "role_category": "Management / Leadership Role",
+        "layout_style": "Single-column, achievement-focused",
+        "font": "Georgia",
+        "font_size": "11 pt",
+        "line_spacing": "1.15",
+    },
+    "NonTechnical": {
+        "template_name": "ATS Standard Template",
+        "role_category": "Corporate / General Role",
+        "layout_style": "Single-column",
+        "font": "Arial",
+        "font_size": "11 pt",
+        "line_spacing": "1.15",
+    },
 }
 
-WIREFRAME_SECTIONS = [
-    "Header (Name & Contact Info)",
-    "Summary",
-    "Skills",
-    "Projects",
-    "Experience",
-    "Education",
-]
+
+def _score_keywords(text, keyword_list):
+    text = (text or "").lower()
+    return sum(1 for kw in keyword_list if kw in text)
 
 
 def _detect_job_role(parsed_data, job_description=""):
-    """Very lightweight keyword-based role classifier: Tech / Design / Management / General."""
-    combined_text = (parsed_data.get("raw_text", "") + " " + (job_description or "")).lower()
+    """
+    Classifies the target role into Tech / Executive / NonTechnical.
+    The job description is the PRIMARY signal (as required). If a job
+    description is provided but has no recognizable keywords, the resume's
+    own text is used as a secondary signal. If NO job description was
+    provided at all, we do NOT guess a technical role from the resume's
+    own content -- we fall straight through to the safe general default.
+    """
+    jd_scores = {
+        "Tech": _score_keywords(job_description, TECH_ROLE_KEYWORDS),
+        "Executive": _score_keywords(job_description, EXECUTIVE_KEYWORDS),
+        "NonTechnical": _score_keywords(job_description, NON_TECHNICAL_KEYWORDS),
+    }
+    if any(jd_scores.values()):
+        return max(jd_scores, key=jd_scores.get)
 
-    tech_count = sum(1 for kw in TECHNICAL_SKILLS if kw in combined_text)
-    design_count = sum(1 for kw in DESIGN_KEYWORDS if kw in combined_text)
-    management_count = sum(1 for kw in MANAGEMENT_KEYWORDS if kw in combined_text)
+    # No job description was provided at all -- do not infer a technical
+    # role just because the resume itself mentions technical skills.
+    if not (job_description or "").strip():
+        return "NonTechnical"
 
-    scores = {"Tech": tech_count, "Design": design_count, "Management": management_count}
-    best_role = max(scores, key=scores.get)
+    # A job description WAS provided but had no recognizable keywords --
+    # fall back to the resume text as a secondary signal.
+    resume_text = parsed_data.get("raw_text", "")
+    resume_scores = {
+        "Tech": _score_keywords(resume_text, TECH_ROLE_KEYWORDS)
+        + sum(1 for kw in TECHNICAL_SKILLS if kw in resume_text.lower()),
+        "Executive": _score_keywords(resume_text, EXECUTIVE_KEYWORDS),
+        "NonTechnical": _score_keywords(resume_text, NON_TECHNICAL_KEYWORDS),
+    }
+    if any(resume_scores.values()):
+        return max(resume_scores, key=resume_scores.get)
 
-    if scores[best_role] == 0:
-        return "General"
-    return best_role
+    # No signal anywhere -- safest general-purpose default
+    return "NonTechnical"
 
 
 def recommend_resume_template(parsed_data, job_description=""):
     """
-    Detects the likely job role from the resume + job description, and returns
-    a simple template/layout/font/priority-section/ATS-tip recommendation.
-    Does not affect ATS scoring in any way — purely additive display data.
+    Detects the likely job role primarily from the job description, and
+    returns the matching template recommendation.
+    Does not affect ATS scoring in any way -- purely additive display data.
     """
     role = _detect_job_role(parsed_data, job_description)
-
-    role_configs = {
-        "Tech": {
-            "template_name": "Modern Tech Template",
-            "layout_style": "Single-column",
-            "layout_reason": "Single-column layouts parse more reliably through ATS scanners and keep the focus on skills and projects.",
-            "recommended_font": "Calibri",
-            "priority_sections": ["Projects", "Technical Skills", "GitHub / Portfolio Links", "Certifications"],
-        },
-        "Design": {
-            "template_name": "Creative Portfolio Template",
-            "layout_style": "Two-column (with a linked portfolio)",
-            "layout_reason": "A two-column layout allows a compact skills sidebar while keeping portfolio links and project visuals prominent.",
-            "recommended_font": "Georgia",
-            "priority_sections": ["Portfolio / Work Samples", "Design Tools & Software", "Projects", "Certifications"],
-        },
-        "Management": {
-            "template_name": "Executive Standard Template",
-            "layout_style": "Single-column",
-            "layout_reason": "A clear, single-column chronological layout is what recruiters and ATS systems expect for leadership-track roles.",
-            "recommended_font": "Georgia",
-            "priority_sections": ["Leadership Experience", "Achievements & Metrics", "Certifications", "Education"],
-        },
-        "General": {
-            "template_name": "ATS Standard Template",
-            "layout_style": "Single-column",
-            "layout_reason": "A single-column, no-frills layout is the safest default when the target role isn't clearly technical, creative, or managerial.",
-            "recommended_font": "Arial",
-            "priority_sections": ["Skills", "Experience", "Education", "Certifications"],
-        },
-    }
-
-    config = role_configs[role]
+    config = ROLE_TEMPLATE_CONFIG[role]
+    no_jd_given = not (job_description or "").strip()
 
     return {
         "detected_role": role,
-        "template_name": config["template_name"],
+        "role_category": config["role_category"],
+        "recommended_template": config["template_name"],
         "layout_style": config["layout_style"],
-        "layout_reason": config["layout_reason"],
-        "recommended_font": config["recommended_font"],
-        "formatting": FORMATTING_SPECS,
-        "priority_sections": config["priority_sections"],
+        "formatting_specs": {
+            "font": config["font"],
+            "font_size": config["font_size"],
+            "line_spacing": config["line_spacing"],
+        },
         "ats_tips": ATS_TIPS,
-        "wireframe_sections": WIREFRAME_SECTIONS,
+        "note": (
+            "No Job Description was provided. A general ATS-friendly resume "
+            "template is recommended."
+        ) if no_jd_given else None,
     }

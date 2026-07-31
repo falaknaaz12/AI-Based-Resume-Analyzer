@@ -807,3 +807,134 @@ a {
         padding: 3rem 0;
     }
 }
+/* ---------- TEMPLATE RECOMMENDATION ---------- */
+.template-card {
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.6rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.template-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(15, 27, 51, 0.08);
+}
+
+.template-card.is-recommended {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 2px rgba(46, 196, 182, 0.25);
+}
+
+.template-card.is-active-preview {
+    border-color: var(--indigo-700);
+}
+
+.template-card-title {
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    color: var(--indigo-900);
+    margin-bottom: 0.4rem;
+}
+
+.template-recommended-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--teal);
+    color: var(--indigo-950);
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    margin-bottom: 0.8rem;
+}
+
+.template-best-for {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+}
+
+.template-best-for li {
+    padding: 0.15rem 0;
+}
+
+.template-best-for li::before {
+    content: "\2022";
+    color: var(--teal-dark);
+    font-weight: 700;
+    display: inline-block;
+    width: 1em;
+}
+
+.template-card .btn-preview {
+    margin-top: auto;
+}
+
+.resume-preview-box {
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 2rem;
+}
+
+.resume-preview-paper {
+    background: #fdfdfd;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 640px;
+    margin: 0 auto;
+    font-family: 'Inter', sans-serif;
+    color: var(--indigo-950);
+}
+
+.resume-preview-paper h4 {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    margin-bottom: 0.1rem;
+}
+
+.resume-preview-paper .preview-role {
+    color: var(--teal-dark);
+    font-weight: 600;
+    margin-bottom: 1.2rem;
+}
+
+.resume-preview-paper .preview-section-title {
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--indigo-800);
+    border-bottom: 2px solid var(--teal);
+    display: inline-block;
+    margin: 1rem 0 0.4rem;
+}
+
+/* Executive layout: section order emphasises leadership summary first */
+.resume-preview-paper.layout-executive .preview-section-title {
+    border-bottom-color: var(--indigo-700);
+}
+
+.why-template-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.why-template-list li {
+    padding: 0.35rem 0;
+    font-size: 0.92rem;
+}
+
+.why-template-list li i {
+    color: var(--teal-dark);
+    margin-right: 0.5rem;
+}

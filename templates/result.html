@@ -21,11 +21,31 @@
         transform: scale(1.08);
         box-shadow: 0 2px 5px rgba(0,0,0,0.15);
     }
-    .wireframe-box {
-        transition: background-color 0.2s ease;
+    .template-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    .wireframe-box:hover {
-        background-color: #f8f9fa !important;
+    .template-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1.25rem rgba(0,0,0,0.08);
+    }
+    .template-card.is-recommended {
+        border-width: 2px;
+    }
+    .template-card.is-active-preview {
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
+    }
+    .resume-preview-paper {
+        max-width: 560px;
+        margin: 0 auto;
+    }
+    .resume-preview-paper .preview-section-title {
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        border-bottom: 2px solid #0d6efd;
+        display: inline-block;
+        margin: 0.9rem 0 0.3rem;
     }
 </style>
 
@@ -207,10 +227,7 @@
             <h5 class="card-title fw-bold mb-3">Job Description Requirement Matching</h5>
             
             <div class="row g-2 mb-3">
-                <div class="col-md-6">
-                    <input type="text" class="form-control" id="keywordSearch" placeholder="Type keyword to filter live...">
-                </div>
-                <div class="col-md-6">
+                <div class="col-12">
                     <div class="btn-group w-100" role="group">
                         <button type="button" class="btn btn-outline-primary active" data-filter="all">All</button>
                         <button type="button" class="btn btn-outline-success" data-filter="present">Present</button>
@@ -248,8 +265,18 @@
     </div>
     {% endif %}
 
-    <!-- RECOMMENDED RESUME TEMPLATE SECTION (RESTORED WIREFRAME) -->
-    {% if template_recommendation %}
+    <!-- RECOMMENDED RESUME TEMPLATE SECTION (SINGLE RECOMMENDED CARD + LIVE PREVIEW) -->
+    {% set static_templates = [
+        {'id': 'modern_tech', 'name': 'Modern Tech Template', 'best_for': ['Software Engineer', 'Web Developer', 'Backend Developer', 'Frontend Developer', 'Data Scientist', 'AI / ML Engineer']},
+        {'id': 'ats_standard', 'name': 'ATS Standard Template', 'best_for': ['Marketing', 'HR', 'Sales', 'Finance', 'Accounting', 'Corporate Jobs', 'Freshers']},
+        {'id': 'executive', 'name': 'Executive Template', 'best_for': ['Manager', 'Team Lead', 'Project Manager', 'Director', 'Operations Manager']},
+    ] %}
+    {% set name_to_id = {'Modern Tech Template': 'modern_tech', 'ATS Standard Template': 'ats_standard', 'Executive Template': 'executive'} %}
+    {% set recommended_name = template_recommendation.recommended_template | default("Modern Tech Template") %}
+    {% set recommended_id = name_to_id.get(recommended_name, "modern_tech") %}
+    {% set recommended_tpl = (static_templates | selectattr("id", "equalto", recommended_id) | list | first) %}
+
+    {% if had_job_description and template_recommendation and recommended_tpl %}
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -258,39 +285,57 @@
                     {{ template_recommendation.role_category or "Tech Role" }}
                 </span>
             </div>
+            <p class="text-muted mb-4">
+                Based on your resume and the job description, here's the template that best
+                fits the role you're targeting.
+            </p>
 
-            <div class="row g-4 mb-4">
+            <div class="row g-4 justify-content-center">
                 <div class="col-md-6">
-                    <h6 class="fw-bold text-dark">Layout Recommendation</h6>
-                    <p class="mb-1"><strong>Template Name:</strong> {{ template_recommendation.recommended_template or "Modern Tech Template" }}</p>
-                    <p class="mb-1"><strong>Layout Style:</strong> {{ template_recommendation.layout_style or "Single-column" }}</p>
-                    <small class="text-muted">Single-column layouts perform best with ATS software.</small>
-                </div>
-                <div class="col-md-6">
-                    <h6 class="fw-bold text-dark">Formatting Specifications</h6>
-                    <p class="mb-1"><strong>Font:</strong> {{ template_recommendation.formatting_specs.font or "Calibri / Arial" }}</p>
-                    <p class="mb-1"><strong>Font Size:</strong> {{ template_recommendation.formatting_specs.font_size or "10-12 pt" }}</p>
-                    <p class="mb-0"><strong>Line Spacing:</strong> {{ template_recommendation.formatting_specs.line_spacing or "1.15" }}</p>
+                    <div class="card h-100 template-card is-recommended border-primary" data-template-id="{{ recommended_tpl.id }}">
+                        <div class="card-body d-flex flex-column">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle mb-2 align-self-start">&#9733; Recommended</span>
+                            <h6 class="fw-bold">{{ recommended_tpl.name }}</h6>
+                            <p class="small fw-semibold mb-1">Best for:</p>
+                            <ul class="small text-muted mb-2 ps-3">
+                                {% for role in recommended_tpl.best_for %}
+                                <li>{{ role }}</li>
+                                {% endfor %}
+                            </ul>
+                            <span class="badge bg-info-subtle text-info border border-info-subtle mb-3 align-self-start">ATS Friendly</span>
+                            <button type="button" class="btn btn-outline-primary btn-sm mt-auto" data-preview-template="{{ recommended_tpl.id }}">
+                                Preview
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- VISUAL RESUME WIREFRAME -->
-            <div class="bg-light p-4 rounded border text-center">
-                <h6 class="fw-bold text-muted mb-3">Visual Resume Wireframe Preview</h6>
-                <div class="d-flex flex-column align-items-center gap-2">
-                    <div class="bg-white border rounded px-4 py-2 fw-bold w-50 shadow-sm wireframe-box">Header (Name & Contact Details)</div>
-                    <div class="text-muted fw-bold">↓</div>
-                    <div class="bg-white border rounded px-4 py-2 fw-semibold w-50 shadow-sm wireframe-box">Summary / Objective</div>
-                    <div class="text-muted fw-bold">↓</div>
-                    <div class="bg-white border rounded px-4 py-2 fw-semibold w-50 shadow-sm wireframe-box">Skills & Technologies</div>
-                    <div class="text-muted fw-bold">↓</div>
-                    <div class="bg-white border rounded px-4 py-2 fw-semibold w-50 shadow-sm wireframe-box">Projects</div>
-                    <div class="text-muted fw-bold">↓</div>
-                    <div class="bg-white border rounded px-4 py-2 fw-semibold w-50 shadow-sm wireframe-box">Experience</div>
-                    <div class="text-muted fw-bold">↓</div>
-                    <div class="bg-white border rounded px-4 py-2 fw-semibold w-50 shadow-sm wireframe-box">Education</div>
+            <div class="row g-4 mt-1">
+                <div class="col-lg-7">
+                    <p class="fw-semibold mb-2 mt-2">Live Preview</p>
+                    <div class="border rounded-3 p-3 bg-white">
+                        <div id="resumePreviewContainer"></div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <p class="fw-semibold mb-2 mt-2">Why this template?</p>
+                    <div class="border rounded-3 p-3 bg-white">
+                        <ul class="list-unstyled mb-0" id="whyTemplateList"></ul>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h5 class="card-title fw-bold mb-3">📄 Resume Template Recommendation</h5>
+            <p class="mb-2">Upload a Job Description to receive an AI-powered resume template recommendation.</p>
+            <p class="text-muted mb-0">
+                The system recommends templates based on the target job role. Since no
+                Job Description was provided, a personalized template cannot be generated.
+            </p>
         </div>
     </div>
     {% endif %}
@@ -320,7 +365,7 @@
             </div>
         </div>
 
-        {% if template_recommendation %}
+        {% if had_job_description and template_recommendation %}
         <div class="accordion-item border-0 rounded overflow-hidden">
             <h2 class="accordion-header" id="headingTips">
                 <button class="accordion-button collapsed fw-bold bg-white text-dark shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTips">
@@ -345,6 +390,7 @@
 </div>
 
 <!-- INTERACTIVE SCRIPT -->
+<script src="{{ url_for('static', filename='js/template_preview.js') }}"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     var searchInput = document.getElementById("keywordSearch");
@@ -390,6 +436,15 @@ document.addEventListener("DOMContentLoaded", function () {
             searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     };
+
+    {% if had_job_description and template_recommendation and recommended_tpl %}
+    initTemplateRecommendation({
+        recommendedId: {{ recommended_tpl.id | tojson }},
+        recommendedReasons: {{ (template_recommendation.ats_tips | default([])) | tojson }},
+        candidateName: {{ (resume_data.name | default("John Doe")) | tojson }},
+        candidateRole: {{ (template_recommendation.role_category | default("Candidate")) | tojson }}
+    });
+    {% endif %}
 });
 </script>
 {% endblock %}
